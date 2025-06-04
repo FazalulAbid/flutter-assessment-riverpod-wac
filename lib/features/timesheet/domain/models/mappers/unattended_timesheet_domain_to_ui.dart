@@ -23,31 +23,4 @@ class UnattendedTimesheetMapper {
           'Total: ${shift.duration.toStringAsFixed(0)} Hrs • €${shift.hourlyRate.toStringAsFixed(2)}/hr',
     );
   }
-
-  static String _formatDate(DateTime date) {
-    const List<String> weekdays = [
-      "MON",
-      "TUE",
-      "WED",
-      "THU",
-      "FRI",
-      "SAT",
-      "SUN",
-    ];
-    const List<String> months = [
-      "JAN",
-      "FEB",
-      "MAR",
-      "APR",
-      "MAY",
-      "JUN",
-      "JUL",
-      "AUG",
-      "SEP",
-      "OCT",
-      "NOV",
-      "DEC",
-    ];
-    return '${date.day.toString().padLeft(2, '0')} ${months[date.month - 1]} ${weekdays[date.weekday - 1]}';
-  }
 }

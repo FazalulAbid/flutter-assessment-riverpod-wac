@@ -8,6 +8,8 @@ class AppBarActions extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     switch (tab) {
       case NavigationTab.home:
         return Row(children: []);
@@ -23,9 +25,13 @@ class AppBarActions extends StatelessWidget {
           children: [
             TextButton(
               onPressed: () {},
-              child: const Text(
+              child: Text(
                 'View Payments',
-                style: TextStyle(color: Colors.green, fontSize: 15, fontWeight: FontWeight.w500),
+                style: TextStyle(
+                  color: theme.primaryColor,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
             ),
           ],

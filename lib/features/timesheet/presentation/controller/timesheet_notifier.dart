@@ -12,7 +12,6 @@ import 'package:flutter_assessment/features/timesheet/domain/models/unattended_t
 import 'package:flutter_assessment/features/timesheet/domain/models/withdraw_timesheet.dart';
 import 'package:flutter_assessment/features/timesheet/domain/repository/timesheet_repository.dart';
 import 'package:flutter_assessment/features/timesheet/presentation/controller/timesheet_state.dart';
-import 'package:flutter_assessment/features/timesheet/presentation/entities/unattended_timesheet_ui_model.dart';
 import 'package:flutter_assessment/features/timesheet/presentation/entities/withdraw_timesheet_ui_model.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -37,19 +36,19 @@ class TimesheetNotifier extends StateNotifier<TimesheetState> {
   }
 
   Future<T> _handleRepositoryCall<T>(
-    Future<Either<AppException, T>> repositoryCall,
-    T defaultValue,
-    String errorPrefix,
-  ) async {
+      Future<Either<AppException, T>> repositoryCall,
+      T defaultValue,
+      String errorPrefix,
+      ) async {
     try {
       final result = await repositoryCall;
       return result.fold(
-        (error) {
+            (error) {
           print('hello : $errorPrefix: ${error.message}');
           _setError('$errorPrefix: ${error.message}');
           return defaultValue;
         },
-        (data) {
+            (data) {
           print('$errorPrefix: Successfully fetched -> $data');
           return data;
         },
@@ -68,36 +67,56 @@ class TimesheetNotifier extends StateNotifier<TimesheetState> {
     state = state.copyWith(isLoading: loading, errorMessage: null);
   }
 
+  Future<List<SubmittedTimesheet>> _fetchSubmittedTimesheets() async {
+    return await _handleRepositoryCall(
+      _repository.fetchSubmittedTimeSheets(page: 1, limit: 50),
+      <SubmittedTimesheet>[],
+      'Failed to load submitted timesheets',
+    );
+  }
+
+  Future<List<WithdrawTimesheet>> _fetchWithdrawTimesheets() async {
+    return await _handleRepositoryCall(
+      _repository.fetchWithdrawTimeSheets(page: 1, limit: 50),
+      <WithdrawTimesheet>[],
+      'Failed to load withdraw timesheets',
+    );
+  }
+
+  Future<List<FlaggedTimesheet>> _fetchFlaggedTimesheets() async {
+    return await _handleRepositoryCall(
+      _repository.fetchFlaggedTimeSheets(page: 1, limit: 50),
+      <FlaggedTimesheet>[],
+      'Failed to load flagged timesheets',
+    );
+  }
+
+  Future<List<UnattendedTimesheet>> _fetchUnattendedTimesheets() async {
+    return await _handleRepositoryCall(
+      _repository.fetchUnattendedTimeSheets(page: 1, limit: 50),
+      <UnattendedTimesheet>[],
+      'Failed to load unattended timesheets',
+    );
+  }
+
+  Future<AccountBalance?> _fetchAccountBalance() async {
+    return await _handleRepositoryCall(
+      _repository.fetchAccountBalance(),
+      null,
+      'Failed to load account balance',
+    );
+  }
+
   Future<void> loadTimesheets() async {
     _setLoading(true);
 
     try {
       final results = await Future.wait([
-        _handleRepositoryCall(
-          _repository.fetchSubmittedTimeSheets(page: 1, limit: 50),
-          <SubmittedTimesheet>[],
-          'Failed to load submitted timesheets',
-        ),
-        _handleRepositoryCall(
-          _repository.fetchWithdrawTimeSheets(page: 1, limit: 50),
-          <WithdrawTimesheet>[],
-          'Failed to load withdraw timesheets',
-        ),
-        _handleRepositoryCall(
-          _repository.fetchFlaggedTimeSheets(page: 1, limit: 50),
-          <SubmittedTimesheet>[],
-          'Failed to load flagged timesheets',
-        ),
-        _handleRepositoryCall(
-          _repository.fetchUnattendedTimeSheets(page: 1, limit: 50),
-          <SubmittedTimesheet>[],
-          'Failed to load unattended timesheets',
-        ),
-        _handleRepositoryCall(
-          _repository.fetchAccountBalance(),
-          null,
-          'Failed to load account balance',
-        ),
+        _fetchSubmittedTimesheets(),
+        _fetchWithdrawTimesheets(),
+        _fetchFlaggedTimesheets(),
+        _fetchUnattendedTimesheets(),
+        _fetchAccountBalance(),
       ]);
 
       final submittedItems = SubmittedTimesheetMapper.fromSubmittedTimesheets(
@@ -129,13 +148,6 @@ class TimesheetNotifier extends StateNotifier<TimesheetState> {
     }
   }
 
-  static const Map<int, String> _tabNames = {
-    0: 'submitted',
-    1: 'withdraw',
-    2: 'flagged',
-    3: 'unattended',
-  };
-
   Future<void> refreshCurrentTab() async {
     final currentTab = state.selectedTab;
     _setLoading(true);
@@ -163,11 +175,7 @@ class TimesheetNotifier extends StateNotifier<TimesheetState> {
   }
 
   Future<void> _refreshSubmittedTab() async {
-    final timesheets = await _handleRepositoryCall(
-      _repository.fetchSubmittedTimeSheets(page: 1, limit: 50),
-      <SubmittedTimesheet>[],
-      'Failed to refresh submitted timesheets',
-    );
+    final timesheets = await _fetchSubmittedTimesheets();
 
     if (state.errorMessage == null) {
       final items = SubmittedTimesheetMapper.fromSubmittedTimesheets(timesheets);
@@ -176,11 +184,7 @@ class TimesheetNotifier extends StateNotifier<TimesheetState> {
   }
 
   Future<void> _refreshWithdrawTab() async {
-    final timesheets = await _handleRepositoryCall(
-      _repository.fetchWithdrawTimeSheets(page: 1, limit: 50),
-      <WithdrawTimesheet>[],
-      'Failed to refresh withdraw timesheets',
-    );
+    final timesheets = await _fetchWithdrawTimesheets();
 
     if (state.errorMessage == null) {
       final items = WithdrawTimesheetMapper.fromWithdrawTimesheets(timesheets);
@@ -189,11 +193,7 @@ class TimesheetNotifier extends StateNotifier<TimesheetState> {
   }
 
   Future<void> _refreshFlaggedTab() async {
-    final timesheets = await _handleRepositoryCall(
-      _repository.fetchFlaggedTimeSheets(page: 1, limit: 50),
-      <FlaggedTimesheet>[],
-      'Failed to refresh flagged timesheets',
-    );
+    final timesheets = await _fetchFlaggedTimesheets();
 
     if (state.errorMessage == null) {
       final items = FlaggedTimesheetMapper.fromFlaggedTimesheets(timesheets);
@@ -202,16 +202,10 @@ class TimesheetNotifier extends StateNotifier<TimesheetState> {
   }
 
   Future<void> _refreshUnattendedTab() async {
-    final timesheets = await _handleRepositoryCall(
-      _repository.fetchUnattendedTimeSheets(page: 1, limit: 50),
-      <UnattendedTimesheetUiModel>[],
-      'Failed to refresh unattended timesheets',
-    );
+    final timesheets = await _fetchUnattendedTimesheets();
 
     if (state.errorMessage == null) {
-      final items = UnattendedTimesheetMapper.fromUnattendedTimesheets(
-        timesheets as List<UnattendedTimesheet>,
-      );
+      final items = UnattendedTimesheetMapper.fromUnattendedTimesheets(timesheets);
       state = state.copyWith(isLoading: false, unattendedItems: items, selectedCount: 0);
     }
   }
@@ -232,9 +226,9 @@ class TimesheetNotifier extends StateNotifier<TimesheetState> {
   List<WithdrawTimeSheetUiModel> _updateItemSelection(String itemId) {
     return state.withdrawItems.map((weekModel) {
       final updatedShifts =
-          weekModel.items.map((shift) {
-            return shift.id == itemId ? shift.copyWith(isSelected: !shift.isSelected) : shift;
-          }).toList();
+      weekModel.items.map((shift) {
+        return shift.id == itemId ? shift.copyWith(isSelected: !shift.isSelected) : shift;
+      }).toList();
       return weekModel.copyWith(items: updatedShifts);
     }).toList();
   }
@@ -250,11 +244,11 @@ class TimesheetNotifier extends StateNotifier<TimesheetState> {
     final allSelected = allShifts.every((shift) => shift.isSelected);
 
     final updatedList =
-        state.withdrawItems.map((weekModel) {
-          final updatedShifts =
-              weekModel.items.map((shift) => shift.copyWith(isSelected: !allSelected)).toList();
-          return weekModel.copyWith(items: updatedShifts);
-        }).toList();
+    state.withdrawItems.map((weekModel) {
+      final updatedShifts =
+      weekModel.items.map((shift) => shift.copyWith(isSelected: !allSelected)).toList();
+      return weekModel.copyWith(items: updatedShifts);
+    }).toList();
 
     final selectedCount = _calculateSelectedCount(updatedList);
 
